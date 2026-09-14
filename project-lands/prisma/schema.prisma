@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- Auth.js required models (see https://authjs.dev/reference/adapter/prisma) ---
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(USER)
+  password      String?
+
+  // Separate from `role`: lets an admin grant specific regular users the
+  // right to create listings during the invite-only preview phase, without
+  // making them admins. Flip the column default to `true` later to open
+  // listing creation up to everyone.
+  canCreateListings Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  listings Listing[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// --- Domain models ---
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ListingType {
+  LAND
+  HOUSE
+  APARTMENT
+  COMMERCIAL
+  FOREST
+  FARMSTEAD
+  OTHER
+}
+
+enum ListingStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+  SOLD
+  ARCHIVED
+}
+
+enum AreaUnit {
+  SQM
+  ARE
+  HECTARE
+}
+
+model Listing {
+  id     String        @id @default(cuid())
+  userId String
+  type   ListingType   @default(LAND)
+  status ListingStatus @default(DRAFT)
+
+  title       String
+  slug        String  @unique
+  description String? @db.Text
+
+  price         Decimal @db.Decimal(12, 2)
+  pricePerUnit  Decimal? @db.Decimal(12, 2)
+  area          Decimal @db.Decimal(12, 4)
+  areaUnit      AreaUnit @default(ARE)
+
+  address      String?
+  municipality String?
+  city         String?
+  latitude     Float?
+  longitude    Float?
+  geometry     Json?
+
+  // Type-specific fields (e.g. for LAND: landPurpose, plotNumber) live here
+  // so new listing types don't require new columns/migrations.
+  attributes Json?
+
+  contactName  String?
+  contactPhone String?
+  contactEmail String?
+
+  viewCount Int @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images ListingImage[]
+
+  @@index([status])
+  @@index([type])
+  @@index([municipality])
+  @@index([userId])
+  @@map("listings")
+}
+
+model ListingImage {
+  id          String  @id @default(cuid())
+  listingId   String
+  storagePath String
+  sortOrder   Int     @default(0)
+  isPrimary   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@map("listing_images")
+}
