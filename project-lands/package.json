@@ -7,15 +7,19 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && node scripts/copy-map-worker.js",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "promote": "node scripts/promote-user.js"
+    "create-admin": "node scripts/create-admin.js",
+    "demo:add": "node scripts/demo-data.js add",
+    "demo:remove": "node scripts/demo-data.js remove"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
+    "lucide-react": "^1.53.0",
+    "maplibre-gl": "^6.14.0",
     "next": "^15.5.24",
     "next-auth": "^5.0.0-beta.32",
     "prisma": "^6.19.3",

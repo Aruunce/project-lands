@@ -1,35 +1,27 @@
 import { z } from "zod";
 
-const optionalText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .optional()
-    .or(z.literal(""))
-    .transform((value) => (value ? value : undefined));
+// Empty form fields become null, so clearing a field on edit clears it in the DB too.
+const emptyToNull = (value: unknown) =>
+  value === undefined || value === null || (typeof value === "string" && value.trim() === "") ? null : value;
+
+const optionalText = (max: number) => z.preprocess(emptyToNull, z.string().trim().max(max).nullable());
+
+const optionalNumber = (schema: z.ZodType<number>) => z.preprocess(emptyToNull, schema.nullable());
 
 export const listingInputSchema = z.object({
   title: z.string().trim().min(3, "Pavadinimas per trumpas").max(200),
   description: optionalText(5000),
   price: z.coerce.number().positive("Kaina turi būti teigiama"),
-  pricePerUnit: z.coerce.number().positive().optional().or(z.literal("")).transform((v) => (v === "" ? undefined : v)),
+  pricePerUnit: optionalNumber(z.coerce.number().positive()),
   area: z.coerce.number().positive("Plotas turi būti teigiamas"),
   areaUnit: z.enum(["SQM", "ARE", "HECTARE"]),
   address: optionalText(300),
   municipality: optionalText(200),
   city: optionalText(200),
+  latitude: optionalNumber(z.coerce.number().min(-90).max(90)),
+  longitude: optionalNumber(z.coerce.number().min(-180).max(180)),
   landPurpose: optionalText(200),
   plotNumber: optionalText(100),
-  contactName: optionalText(200),
-  contactPhone: optionalText(50),
-  contactEmail: z
-    .string()
-    .trim()
-    .email("Neteisingas el. pašto adresas")
-    .optional()
-    .or(z.literal(""))
-    .transform((v) => (v ? v : undefined)),
 });
 
 export type ListingInput = z.infer<typeof listingInputSchema>;

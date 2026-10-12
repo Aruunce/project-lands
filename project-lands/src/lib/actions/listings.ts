@@ -3,15 +3,18 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ListingStatus } from "@prisma/client";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canCreateListings } from "@/lib/authz";
-import { listingInputSchema } from "@/lib/validations/listing";
+import { requireAdmin } from "@/lib/authz";
+import { listingInputSchema, type ListingInput } from "@/lib/validations/listing";
 import { randomSlugSuffix, slugify } from "@/lib/slug";
 import { rateLimit } from "@/lib/rate-limit";
 import type { LandAttributes } from "@/types/listing";
 
-export type ListingFormState = { error?: string; fieldErrors?: Record<string, string[]> };
+export type ListingFormState = {
+  error?: string;
+  fieldErrors?: Record<string, string[]>;
+  success?: string;
+};
 
 function parseForm(formData: FormData) {
   return listingInputSchema.safeParse({
@@ -24,12 +27,20 @@ function parseForm(formData: FormData) {
     address: formData.get("address"),
     municipality: formData.get("municipality"),
     city: formData.get("city"),
+    latitude: formData.get("latitude"),
+    longitude: formData.get("longitude"),
     landPurpose: formData.get("landPurpose"),
     plotNumber: formData.get("plotNumber"),
-    contactName: formData.get("contactName"),
-    contactPhone: formData.get("contactPhone"),
-    contactEmail: formData.get("contactEmail"),
   });
+}
+
+// Type-specific fields go into the `attributes` JSON column; only non-empty ones are kept.
+function toListingData({ landPurpose, plotNumber, ...data }: ListingInput) {
+  const attributes: LandAttributes = {
+    ...(landPurpose && { landPurpose }),
+    ...(plotNumber && { plotNumber }),
+  };
+  return { ...data, attributes };
 }
 
 async function generateUniqueSlug(title: string): Promise<string> {
@@ -48,11 +59,7 @@ export async function createListing(
   _prevState: ListingFormState,
   formData: FormData,
 ): Promise<ListingFormState> {
-  const session = await auth();
-  if (!session?.user) redirect("/prisijungti");
-  if (!canCreateListings(session.user)) {
-    return { error: "Neturite teisės kurti skelbimų. Susisiekite su administratoriumi." };
-  }
+  const session = await requireAdmin();
 
   if (!rateLimit(`create-listing:${session.user.id}`, 20, 60 * 60 * 1000)) {
     return { error: "Per daug bandymų. Bandykite vėliau." };
@@ -63,35 +70,18 @@ export async function createListing(
     return { error: "Patikrinkite formos laukus.", fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { landPurpose, plotNumber, ...data } = parsed.data;
-  const attributes: LandAttributes = { landPurpose, plotNumber };
-  const slug = await generateUniqueSlug(data.title);
+  const slug = await generateUniqueSlug(parsed.data.title);
 
   const listing = await prisma.listing.create({
     data: {
-      ...data,
+      ...toListingData(parsed.data),
       slug,
-      attributes,
       userId: session.user.id,
     },
   });
 
-  revalidatePath("/mano-skelbimai");
-  redirect(`/skelbimai/${listing.slug}/redaguoti`);
-}
-
-async function requireOwnedListing(id: string) {
-  const session = await auth();
-  if (!session?.user) redirect("/prisijungti");
-
-  const listing = await prisma.listing.findUnique({ where: { id } });
-  if (!listing) return { session, listing: null as null };
-
-  const isOwner = listing.userId === session.user.id;
-  const isAdmin = session.user.role === "ADMIN";
-  if (!isOwner && !isAdmin) return { session, listing: null as null };
-
-  return { session, listing };
+  revalidatePath("/admin");
+  redirect(`/admin/skelbimai/${listing.slug}/redaguoti`);
 }
 
 export async function updateListing(
@@ -99,37 +89,37 @@ export async function updateListing(
   _prevState: ListingFormState,
   formData: FormData,
 ): Promise<ListingFormState> {
-  const { listing } = await requireOwnedListing(id);
-  if (!listing) return { error: "Skelbimas nerastas arba neturite teisės jo redaguoti." };
+  await requireAdmin();
+
+  const listing = await prisma.listing.findUnique({ where: { id } });
+  if (!listing) return { error: "Skelbimas nerastas." };
 
   const parsed = parseForm(formData);
   if (!parsed.success) {
     return { error: "Patikrinkite formos laukus.", fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { landPurpose, plotNumber, ...data } = parsed.data;
-  const attributes: LandAttributes = { landPurpose, plotNumber };
-
   await prisma.listing.update({
     where: { id },
-    data: { ...data, attributes },
+    data: toListingData(parsed.data),
   });
 
-  revalidatePath("/mano-skelbimai");
+  revalidatePath("/admin");
   revalidatePath(`/skelbimai/${listing.slug}`);
-  return {};
+  return { success: "Pakeitimai išsaugoti." };
 }
 
 export async function deleteListing(id: string): Promise<void> {
-  const { listing } = await requireOwnedListing(id);
-  if (!listing) return;
+  await requireAdmin();
 
-  await prisma.listing.delete({ where: { id } });
-  revalidatePath("/mano-skelbimai");
+  await prisma.listing.deleteMany({ where: { id } });
+  revalidatePath("/admin");
 }
 
 export async function setListingStatus(id: string, status: ListingStatus): Promise<void> {
-  const { listing } = await requireOwnedListing(id);
+  await requireAdmin();
+
+  const listing = await prisma.listing.findUnique({ where: { id } });
   if (!listing) return;
 
   await prisma.listing.update({
@@ -140,6 +130,6 @@ export async function setListingStatus(id: string, status: ListingStatus): Promi
     },
   });
 
-  revalidatePath("/mano-skelbimai");
+  revalidatePath("/admin");
   revalidatePath(`/skelbimai/${listing.slug}`);
 }

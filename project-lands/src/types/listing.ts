@@ -8,9 +8,7 @@ export type ListingPolygon = {
   coordinates: number[][][];
 };
 
-// Type-specific fields live in Listing.attributes (JSONB) so new listing
-// types can be added without a schema migration. Each type gets its own
-// attribute shape here.
+// Type-specific fields stored in Listing.attributes (JSON), so new types need no migration.
 export type LandAttributes = {
   landPurpose?: string; // žemės paskirtis
   plotNumber?: string; // sklypo numeris / kadastro Nr.
