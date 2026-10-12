@@ -11,7 +11,7 @@ import Reveal from "@/components/ui/Reveal";
 const PAGE_SIZE = 12;
 
 export const metadata: Metadata = {
-  title: "Sklypai pardavimui",
+  title: "Skelbimai",
 };
 
 export default async function ListingsPage({
@@ -59,7 +59,7 @@ export default async function ListingsPage({
       <section className="border-b border-stone-200/70 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <h1 className="animate-fade-up font-display text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
-            Sklypai pardavimui
+            Sklypai ir kitas nekilnojamasis turtas
           </h1>
           <p className="mt-2 animate-fade-up text-stone-500 [animation-delay:80ms]">
             {query ? (

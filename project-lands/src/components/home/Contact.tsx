@@ -23,9 +23,9 @@ export default function Contact() {
 
             <div className="grid items-center gap-10 lg:grid-cols-[1.2fr_1fr]">
               <div>
-                <SectionHeading eyebrow="Kontaktai" title="Domina sklypas?" light />
+                <SectionHeading eyebrow="Kontaktai" title="Domina pasiūlymas?" light />
                 <p className="mt-5 max-w-lg text-lg leading-relaxed text-white/75">
-                  Parašykite arba paskambinkite — atsakysime į klausimus ir suderinsime sklypo apžiūrą.
+                  Parašykite arba paskambinkite — atsakysime į klausimus ir suderinsime apžiūrą.
                 </p>
               </div>
 

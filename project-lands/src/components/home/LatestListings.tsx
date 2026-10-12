@@ -10,7 +10,7 @@ export default function LatestListings({ listings }: { listings: Listing[] }) {
     <section id="skelbimai" className="scroll-mt-16 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <SectionHeading eyebrow="Naujausi skelbimai" title="Sklypai pardavimui" />
+          <SectionHeading eyebrow="Naujausi skelbimai" title="Sklypai ir kitas NT" />
           {listings.length > 0 && (
             <Link
               href="/skelbimai"
@@ -29,7 +29,7 @@ export default function LatestListings({ listings }: { listings: Listing[] }) {
                 <TreePine className="size-7" />
               </span>
               <p className="mt-5 font-display text-xl font-semibold text-stone-900">Skelbimų dar nėra</p>
-              <p className="mt-2 max-w-sm text-stone-500">Nauji sklypai bus paskelbti netrukus — užsukite vėliau.</p>
+              <p className="mt-2 max-w-sm text-stone-500">Nauji skelbimai bus paskelbti netrukus — užsukite vėliau.</p>
             </div>
           </Reveal>
         ) : (

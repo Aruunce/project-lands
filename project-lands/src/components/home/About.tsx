@@ -12,7 +12,7 @@ const FEATURES = [
   {
     icon: Search,
     title: "Patogi paieška",
-    text: "Raskite sklypą pagal vietovę, savivaldybę ar pavadinimą.",
+    text: "Raskite sklypą ar kitą objektą pagal vietovę, savivaldybę ar pavadinimą.",
   },
   {
     icon: MessageCircle,
@@ -26,7 +26,7 @@ export default function About() {
     <section id="apie" className="scroll-mt-16 border-y border-stone-200/70 bg-white py-20 sm:py-28">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20">
         <Reveal>
-          <SectionHeading eyebrow="Apie" title="Sklypo paieška — paprastai ir aiškiai" />
+          <SectionHeading eyebrow="Apie" title="Nekilnojamasis turtas — paprastai ir aiškiai" />
           <p className="mt-6 text-lg leading-relaxed text-stone-600">{siteConfig.about}</p>
         </Reveal>
 

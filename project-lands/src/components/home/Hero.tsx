@@ -27,16 +27,16 @@ export default function Hero({ activeListings }: { activeListings: number }) {
           </span>
           {activeListings > 0
             ? `${activeListings} ${pluralize(activeListings, ["aktyvus skelbimas", "aktyvūs skelbimai", "aktyvių skelbimų"])}`
-            : "Nauji sklypai jau netrukus"}
+            : "Nauji skelbimai jau netrukus"}
         </p>
 
         <h1 className="mt-6 max-w-3xl animate-fade-up font-display text-4xl font-bold leading-[1.1] tracking-tight [animation-delay:120ms] sm:text-6xl">
-          Raskite savo <span className="text-brand-300">žemės sklypą</span>
+          Žemės sklypai <span className="text-brand-300">ir kitas nekilnojamasis turtas</span>
         </h1>
 
         <p className="mt-5 max-w-xl animate-fade-up text-lg leading-relaxed text-white/75 [animation-delay:240ms]">
-          Žemės sklypai pardavimui Lietuvoje — aiški kaina, plotas ir vieta, tiesioginis kontaktas su
-          pardavėju.
+          Sklypai, sodybos ir kitas NT Lietuvoje — aiški kaina, plotas ir vieta žemėlapyje, tiesioginis
+          kontaktas su pardavėju.
         </p>
 
         <div className="mt-10 animate-fade-up [animation-delay:360ms]">
