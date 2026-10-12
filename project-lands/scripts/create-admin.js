@@ -57,15 +57,29 @@ async function main() {
     throw new Error("Slaptažodžiai nesutampa.");
   }
 
+  // Recovery path for a lost phone: 2FA can be turned off here.
+  const existing = await prisma.user.findUnique({ where: { email }, select: { totpEnabledAt: true } });
+  let disable2fa = false;
+  if (existing?.totpEnabledAt) {
+    const answer = (await ask("Išjungti dviejų žingsnių patvirtinimą (2FA)? (t/N): ")).trim().toLowerCase();
+    disable2fa = answer === "t" || answer === "taip";
+  }
+
   const passwordHash = await bcrypt.hash(password, 12);
 
   const user = await prisma.user.upsert({
     where: { email },
     create: { email, name: name || null, password: passwordHash, role: "ADMIN" },
-    update: { password: passwordHash, role: "ADMIN", ...(name ? { name } : {}) },
+    update: {
+      password: passwordHash,
+      role: "ADMIN",
+      ...(name ? { name } : {}),
+      ...(disable2fa ? { totpSecret: null, totpEnabledAt: null, totpLastStep: null } : {}),
+    },
   });
 
   console.log(`OK: ${user.email} yra administratorius. Prisijunkite adresu /admin`);
+  if (disable2fa) console.log("2FA išjungta — vėl įjunkite ją puslapyje /admin/saugumas.");
 }
 
 main()

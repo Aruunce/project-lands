@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Eye } from "lucide-react";
+import { Eye, ShieldCheck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
 import { STATUS_LABELS } from "@/lib/format";
@@ -23,12 +23,20 @@ export default async function AdminListingsPage() {
     <main className="px-4 py-10 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-green-800">Skelbimų valdymas</h1>
-        <Link
-          href="/admin/skelbimai/naujas"
-          className="bg-green-700 text-white font-semibold rounded-md px-4 py-2 hover:bg-green-800 transition-colors"
-        >
-          + Naujas skelbimas
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/saugumas"
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <ShieldCheck className="size-4" /> Saugumas
+          </Link>
+          <Link
+            href="/admin/skelbimai/naujas"
+            className="bg-green-700 text-white font-semibold rounded-md px-4 py-2 hover:bg-green-800 transition-colors"
+          >
+            + Naujas skelbimas
+          </Link>
+        </div>
       </div>
 
       {listings.length === 0 ? (

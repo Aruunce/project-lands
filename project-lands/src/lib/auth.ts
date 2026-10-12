@@ -7,9 +7,19 @@ import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validations/auth";
 import { authConfig } from "@/lib/auth.config";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { normalizeCode, verifyStoredTotp } from "@/lib/totp";
 
+// The `code` values are shown as messages by the login form.
 class RateLimitedError extends CredentialsSignin {
   code = "rate_limited";
+}
+
+class TotpRequiredError extends CredentialsSignin {
+  code = "totp_required";
+}
+
+class TotpInvalidError extends CredentialsSignin {
+  code = "totp_invalid";
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -22,6 +32,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "El. paštas", type: "email" },
         password: { label: "Slaptažodis", type: "password" },
+        code: { label: "Kodas", type: "text" },
       },
       authorize: async (credentials, request) => {
         // Slow down password guessing.
@@ -42,6 +53,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // Only admins may sign in.
         if (user.role !== "ADMIN") return null;
+
+        // Second step: code from the authenticator app, if 2FA is enabled.
+        if (user.totpEnabledAt && user.totpSecret) {
+          const code = normalizeCode(credentials.code);
+          if (!code) throw new TotpRequiredError();
+
+          const step = verifyStoredTotp(user.totpSecret, code, user.totpLastStep);
+          if (step === null) throw new TotpInvalidError();
+
+          await prisma.user.update({ where: { id: user.id }, data: { totpLastStep: step } });
+        }
 
         return {
           id: user.id,
