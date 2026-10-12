@@ -23,7 +23,7 @@ const FEATURES = [
 
 export default function About() {
   return (
-    <section id="apie" className="scroll-mt-16 border-y border-stone-200/70 bg-white py-20 sm:py-28">
+    <section id="apie" className="scroll-mt-24 border-y border-stone-200/70 bg-white py-20 sm:py-28">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20">
         <Reveal>
           <SectionHeading eyebrow="Apie" title="Nekilnojamasis turtas — paprastai ir aiškiai" />

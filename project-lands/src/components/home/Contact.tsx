@@ -9,7 +9,7 @@ export default function Contact() {
   const hasContacts = Boolean(phone || email);
 
   return (
-    <section id="kontaktai" className="scroll-mt-16 py-20 sm:py-28">
+    <section id="kontaktai" className="scroll-mt-24 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
           <div className="relative isolate overflow-hidden rounded-3xl bg-brand-900 px-6 py-14 text-white sm:px-12 sm:py-16">

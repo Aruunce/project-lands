@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import Logo from "./Logo";
 import LogoutButton from "@/components/LogoutButton";
+import { siteConfig } from "@/config/site";
 
 const LINKS = [
   { href: "/skelbimai", label: "Skelbimai" },
@@ -46,6 +47,11 @@ export default function NavbarClient({ isAdmin }: { isAdmin: boolean }) {
               : "bg-transparent text-white"
         }`}
       >
+        {siteConfig.notice && (
+          <p className="h-7 truncate bg-amber-100 px-4 text-center text-xs font-medium leading-7 text-amber-900">
+            {siteConfig.notice}
+          </p>
+        )}
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Logo onClick={closeMenu} />
 
@@ -134,7 +140,7 @@ export default function NavbarClient({ isAdmin }: { isAdmin: boolean }) {
       </header>
 
       {/* Spacer for the fixed header (on the homepage the hero sits under it). */}
-      {!isHome && <div className="h-16" aria-hidden="true" />}
+      {!isHome && <div className={siteConfig.notice ? "h-23" : "h-16"} aria-hidden="true" />}
     </>
   );
 }

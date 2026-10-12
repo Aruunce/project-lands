@@ -7,7 +7,7 @@ import SectionHeading from "./SectionHeading";
 
 export default function LatestListings({ listings }: { listings: Listing[] }) {
   return (
-    <section id="skelbimai" className="scroll-mt-16 py-20 sm:py-28">
+    <section id="skelbimai" className="scroll-mt-24 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <SectionHeading eyebrow="Naujausi skelbimai" title="Sklypai ir kitas NT" />
