@@ -1,8 +1,4 @@
-// Best-effort, in-memory, per-serverless-instance rate limiter. It resets
-// whenever a new instance spins up and isn't shared across instances, so it
-// does not guarantee a hard limit — it's a cheap first line of defense against
-// casual abuse until a shared store (e.g. Upstash Redis free tier) is worth
-// adding.
+// Simple in-memory rate limiter (per server instance, resets on restart).
 type Bucket = { count: number; resetAt: number };
 
 const buckets = new Map<string, Bucket>();

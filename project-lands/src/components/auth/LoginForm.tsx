@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import Link from "next/link";
 
 export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   const router = useRouter();
@@ -26,7 +25,11 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
     setIsSubmitting(false);
 
     if (result?.error) {
-      setError("Neteisingas el. paštas arba slaptažodis.");
+      setError(
+        result.code === "rate_limited"
+          ? "Per daug bandymų prisijungti. Bandykite po 15 minučių."
+          : "Neteisingas el. paštas arba slaptažodis.",
+      );
       return;
     }
 
@@ -36,7 +39,7 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-sm mx-auto flex flex-col gap-4">
-      <h1 className="text-2xl font-bold text-green-800">Prisijungti</h1>
+      <h1 className="text-2xl font-bold text-green-800">Administratoriaus prisijungimas</h1>
 
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
@@ -73,13 +76,6 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       >
         {isSubmitting ? "Jungiamasi..." : "Prisijungti"}
       </button>
-
-      <p className="text-sm text-gray-600 text-center">
-        Neturite paskyros?{" "}
-        <Link href="/registruotis" className="text-green-700 font-semibold hover:underline">
-          Registruokitės
-        </Link>
-      </p>
     </form>
   );
 }

@@ -6,13 +6,11 @@ declare module "next-auth" {
     user: {
       id: string;
       role: UserRole;
-      canCreateListings: boolean;
     } & DefaultSession["user"];
   }
 
   interface User {
     role: UserRole;
-    canCreateListings: boolean;
   }
 }
 
@@ -20,6 +18,5 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: UserRole;
-    canCreateListings: boolean;
   }
 }

@@ -19,12 +19,6 @@ model User {
   role          UserRole  @default(USER)
   password      String?
 
-  // Separate from `role`: lets an admin grant specific regular users the
-  // right to create listings during the invite-only preview phase, without
-  // making them admins. Flip the column default to `true` later to open
-  // listing creation up to everyone.
-  canCreateListings Boolean @default(false)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -131,10 +125,6 @@ model Listing {
   // Type-specific fields (e.g. for LAND: landPurpose, plotNumber) live here
   // so new listing types don't require new columns/migrations.
   attributes Json?
-
-  contactName  String?
-  contactPhone String?
-  contactEmail String?
 
   viewCount Int @default(0)
 
