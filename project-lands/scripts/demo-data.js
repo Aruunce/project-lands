@@ -1,13 +1,44 @@
 // Sample listings for previewing the site. They all belong to a separate demo
 // user (demo@example.test, can't sign in), so `remove` deletes only them.
 // Usage: npm run demo:add | npm run demo:remove
-const { PrismaClient } = require("@prisma/client");
+const { Prisma, PrismaClient } = require("@prisma/client");
 
 const DEMO_EMAIL = "demo@example.test";
+const M2_PER_UNIT = { SQM: 1, ARE: 100, HECTARE: 10_000 };
+
+// Irregular 5–7 corner plot boundary around the pin, scaled to the listing's area.
+function demoBoundary(lat, lng, areaM2, seed) {
+  const count = 5 + (seed % 3);
+  const ratio = 1.1 + (seed % 3) * 0.25; // stretch along one axis
+  const angle = (((seed * 37) % 180) * Math.PI) / 180;
+
+  // Corners in increasing angle order, so the shape never crosses itself.
+  const shape = Array.from({ length: count }, (_, i) => {
+    const t = (i / count) * 2 * Math.PI + Math.sin(seed + i) * 0.25;
+    const r = 0.8 + 0.25 * Math.abs(Math.sin(seed * 3 + i * 1.7));
+    const x = r * Math.cos(t) * ratio;
+    const y = r * Math.sin(t);
+    return [x * Math.cos(angle) - y * Math.sin(angle), x * Math.sin(angle) + y * Math.cos(angle)];
+  });
+
+  const unitArea =
+    Math.abs(
+      shape.reduce((sum, [x1, y1], i) => {
+        const [x2, y2] = shape[(i + 1) % count];
+        return sum + x1 * y2 - x2 * y1;
+      }, 0),
+    ) / 2;
+  const scale = Math.sqrt(areaM2 / unitArea); // meters per unit
+  const metersPerDegLng = 111_320 * Math.cos((lat * Math.PI) / 180);
+  const round = (value) => Math.round(value * 1e6) / 1e6;
+
+  const corners = shape.map(([x, y]) => [round(lng + (x * scale) / metersPerDegLng), round(lat + (y * scale) / 111_320)]);
+  return { type: "Polygon", coordinates: [[...corners, corners[0]]] };
+}
 
 // [title, price €, area, unit, city, municipality, purpose, lat, lng, description]
 const LISTINGS = [
-  ["Sklypas prie Asvejos ežero", 39000, 25, "ARE", "Dubingiai", "Molėtų r. sav.", "Rekreacinė", 55.0569, 25.4447,
+  ["Sklypas prie Asvejos ežero", 39000, 25, "ARE", "Dubingiai", "Molėtų r. sav.", "Rekreacinė", 55.058, 25.4475,
     "Ramus sklypas vos 200 m nuo Asvejos ežero. Aplink miškai, privažiavimas žvyrkeliu, elektra prie sklypo ribos."],
   ["Namų valdos sklypas Pavilnyje", 62000, 8, "ARE", "Vilnius", "Vilniaus m. sav.", "Gyvenamoji", 54.674, 25.348,
     "Sklypas individualaus namo statybai ramiame Pavilnio kvartale. Miesto vandentiekis ir nuotekos, asfaltuotas privažiavimas."],
@@ -64,6 +95,8 @@ async function add() {
       municipality,
       latitude,
       longitude,
+      // Every 4th listing keeps only a pin, to show both cases.
+      geometry: index % 4 === 3 ? Prisma.DbNull : demoBoundary(latitude, longitude, area * M2_PER_UNIT[areaUnit], index),
       attributes: { landPurpose, plotNumber: `4400-0000-${String(index + 1).padStart(4, "0")}` },
       status,
       publishedAt: status === "PUBLISHED" ? new Date(now - index * 6 * 60 * 60 * 1000) : null,

@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { Listing } from "@prisma/client";
 import { ArrowRight, MapPin, Ruler } from "lucide-react";
 import { AREA_UNIT_LABELS, formatArea, formatPrice } from "@/lib/format";
-import type { LandAttributes } from "@/types/listing";
+import type { LandAttributes, ListingPolygon } from "@/types/listing";
+import MapThumbnail from "@/components/map/MapThumbnail";
 import PlotPlaceholder from "./PlotPlaceholder";
 
 export default function ListingCard({ listing }: { listing: Listing }) {
@@ -15,10 +16,19 @@ export default function ListingCard({ listing }: { listing: Listing }) {
       className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200/80 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-950/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
     >
       <div className="relative aspect-[4/3] overflow-hidden">
+        {/* The pattern doubles as the loading state for the map image. */}
         <PlotPlaceholder
           seed={listing.slug}
           className="transition-transform duration-700 ease-out group-hover:scale-105"
         />
+        {listing.latitude != null && listing.longitude != null && (
+          <MapThumbnail
+            lat={listing.latitude}
+            lng={listing.longitude}
+            geometry={listing.geometry as ListingPolygon | null}
+            className="transition-transform duration-700 ease-out group-hover:scale-105"
+          />
+        )}
         {attributes.landPurpose && (
           <span className="absolute left-3 top-3 max-w-[85%] truncate rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-brand-800 shadow-sm backdrop-blur">
             {attributes.landPurpose}

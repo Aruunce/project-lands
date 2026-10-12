@@ -2,8 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import type { ListingStatus } from "@prisma/client";
+import { Prisma, type ListingStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { polygonCenter, ringPoints } from "@/lib/geo";
 import { requireAdmin } from "@/lib/authz";
 import { listingInputSchema, type ListingInput } from "@/lib/validations/listing";
 import { randomSlugSuffix, slugify } from "@/lib/slug";
@@ -29,18 +30,27 @@ function parseForm(formData: FormData) {
     city: formData.get("city"),
     latitude: formData.get("latitude"),
     longitude: formData.get("longitude"),
+    geometry: formData.get("geometry"),
     landPurpose: formData.get("landPurpose"),
     plotNumber: formData.get("plotNumber"),
   });
 }
 
 // Type-specific fields go into the `attributes` JSON column; only non-empty ones are kept.
-function toListingData({ landPurpose, plotNumber, ...data }: ListingInput) {
+function toListingData({ landPurpose, plotNumber, geometry, ...data }: ListingInput) {
   const attributes: LandAttributes = {
     ...(landPurpose && { landPurpose }),
     ...(plotNumber && { plotNumber }),
   };
-  return { ...data, attributes };
+
+  // A drawn boundary without a pin gets its center as the pin.
+  if (geometry && (data.latitude === null || data.longitude === null)) {
+    const center = polygonCenter(ringPoints(geometry));
+    data.latitude = center.lat;
+    data.longitude = center.lng;
+  }
+
+  return { ...data, attributes, geometry: geometry ?? Prisma.DbNull };
 }
 
 async function generateUniqueSlug(title: string): Promise<string> {

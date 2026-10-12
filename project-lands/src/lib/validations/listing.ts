@@ -8,6 +8,21 @@ const optionalText = (max: number) => z.preprocess(emptyToNull, z.string().trim(
 
 const optionalNumber = (schema: z.ZodType<number>) => z.preprocess(emptyToNull, schema.nullable());
 
+// Plot boundary drawn on the map: a GeoJSON Polygon sent as a JSON string.
+const position = z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]);
+const polygonSchema = z.object({
+  type: z.literal("Polygon"),
+  coordinates: z.array(z.array(position).min(4).max(201)).length(1),
+});
+const optionalPolygon = z.preprocess((value) => {
+  if (emptyToNull(value) === null) return null;
+  try {
+    return JSON.parse(String(value));
+  } catch {
+    return value; // fails validation below
+  }
+}, polygonSchema.nullable());
+
 export const listingInputSchema = z.object({
   title: z.string().trim().min(3, "Pavadinimas per trumpas").max(200),
   description: optionalText(5000),
@@ -20,6 +35,7 @@ export const listingInputSchema = z.object({
   city: optionalText(200),
   latitude: optionalNumber(z.coerce.number().min(-90).max(90)),
   longitude: optionalNumber(z.coerce.number().min(-180).max(180)),
+  geometry: optionalPolygon,
   landPurpose: optionalText(200),
   plotNumber: optionalText(100),
 });

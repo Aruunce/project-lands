@@ -9,9 +9,12 @@ import { prisma } from "@/lib/prisma";
 import { AREA_UNIT_LABELS, STATUS_LABELS, formatArea, formatPrice } from "@/lib/format";
 import { googleDirectionsUrl, wazeUrl } from "@/lib/map";
 import { siteConfig } from "@/config/site";
-import type { LandAttributes } from "@/types/listing";
+import type { LandAttributes, ListingPolygon } from "@/types/listing";
+import type { AreaUnit } from "@prisma/client";
 import PlotPlaceholder from "@/components/listings/PlotPlaceholder";
 import ListingMap from "@/components/map/ListingMap";
+
+const PER_UNIT_LABELS: Record<AreaUnit, string> = { SQM: "m²", ARE: "arą", HECTARE: "hektarą" };
 
 async function getVisibleListing(slug: string) {
   const session = await auth();
@@ -91,24 +94,37 @@ export default async function ListingDetailPage({
           </p>
         )}
 
-        <div className="relative mt-6 aspect-[16/9] animate-fade-up overflow-hidden rounded-3xl sm:aspect-[21/9]">
-          <PlotPlaceholder seed={listing.slug} />
+        {/* Until photos exist, the header shows the plot on the map. */}
+        <div className="relative mt-6 h-72 animate-fade-up overflow-hidden rounded-3xl bg-stone-100 ring-1 ring-stone-200 sm:h-[440px]">
+          {coords ? (
+            <ListingMap lat={coords.lat} lng={coords.lng} geometry={listing.geometry as ListingPolygon | null} />
+          ) : (
+            <PlotPlaceholder seed={listing.slug} />
+          )}
           {attributes.landPurpose && (
-            <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-brand-800 shadow-sm backdrop-blur">
+            <span className="absolute left-4 top-4 z-10 rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-brand-800 shadow-sm backdrop-blur">
               {attributes.landPurpose}
             </span>
           )}
         </div>
 
-        <div className="mt-8 animate-fade-up [animation-delay:100ms]">
-          <h1 className="font-display text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
-            {listing.title}
-          </h1>
-          {location && (
-            <p className="mt-3 flex items-center gap-2 text-stone-600">
-              <MapPin className="size-5 shrink-0 text-brand-600" />
-              {location}
-            </p>
+        <div className="mt-8 flex animate-fade-up flex-col gap-4 [animation-delay:100ms] lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="font-display text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
+              {listing.title}
+            </h1>
+            {location && (
+              <p className="mt-3 flex items-center gap-2 text-stone-600">
+                <MapPin className="size-5 shrink-0 text-brand-600" />
+                {location}
+              </p>
+            )}
+          </div>
+          {coords && (
+            <div className="flex flex-wrap gap-3">
+              <DirectionsLink href={googleDirectionsUrl(coords.lat, coords.lng)} label="Google Maps" />
+              <DirectionsLink href={wazeUrl(coords.lat, coords.lng)} label="Waze" />
+            </div>
           )}
         </div>
 
@@ -117,7 +133,11 @@ export default async function ListingDetailPage({
             <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <Fact icon={Ruler} label="Plotas" value={formatArea(listing.area, listing.areaUnit)} />
               {listing.pricePerUnit && (
-                <Fact icon={Tag} label={`Kaina už ${unit}`} value={formatPrice(listing.pricePerUnit)} />
+                <Fact
+                  icon={Tag}
+                  label={`Kaina už ${PER_UNIT_LABELS[listing.areaUnit]}`}
+                  value={formatPrice(listing.pricePerUnit)}
+                />
               )}
               {attributes.landPurpose && <Fact icon={Sprout} label="Paskirtis" value={attributes.landPurpose} />}
               {attributes.plotNumber && <Fact icon={Hash} label="Sklypo Nr." value={attributes.plotNumber} />}
@@ -128,19 +148,6 @@ export default async function ListingDetailPage({
               <section className="mt-10">
                 <h2 className="font-display text-xl font-semibold text-stone-900">Aprašymas</h2>
                 <p className="mt-3 whitespace-pre-line leading-relaxed text-stone-700">{listing.description}</p>
-              </section>
-            )}
-
-            {coords && (
-              <section className="mt-10">
-                <h2 className="font-display text-xl font-semibold text-stone-900">Vieta</h2>
-                <div className="mt-4 h-80 overflow-hidden rounded-2xl bg-stone-100 ring-1 ring-stone-200 sm:h-96">
-                  <ListingMap lat={coords.lat} lng={coords.lng} />
-                </div>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <DirectionsLink href={googleDirectionsUrl(coords.lat, coords.lng)} label="Google Maps" />
-                  <DirectionsLink href={wazeUrl(coords.lat, coords.lng)} label="Waze" />
-                </div>
               </section>
             )}
           </div>
@@ -192,7 +199,7 @@ function ContactCard({ price, pricePerUnit }: { price: string; pricePerUnit?: st
 
       <div className="my-6 border-t border-stone-100" />
 
-      <p className="font-semibold text-stone-900">Domina šis sklypas?</p>
+      <p className="font-semibold text-stone-900">Domina šis pasiūlymas?</p>
       {name && <p className="mt-1 text-sm text-stone-500">{name}</p>}
 
       <div className="mt-4 flex flex-col gap-2.5">

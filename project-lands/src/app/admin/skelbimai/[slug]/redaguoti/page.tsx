@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
 import { updateListing } from "@/lib/actions/listings";
 import ListingForm from "@/components/listings/ListingForm";
-import type { LandAttributes } from "@/types/listing";
+import type { LandAttributes, ListingPolygon } from "@/types/listing";
 
 export const metadata: Metadata = {
   title: "Redaguoti skelbimą",
@@ -52,6 +52,7 @@ export default async function EditListingPage({
             listing.latitude != null && listing.longitude != null
               ? { lat: listing.latitude, lng: listing.longitude }
               : null,
+          geometry: listing.geometry as ListingPolygon | null,
         }}
       />
     </main>

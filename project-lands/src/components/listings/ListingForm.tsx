@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import type { ListingFormState } from "@/lib/actions/listings";
+import type { ListingPolygon } from "@/types/listing";
 import LocationPicker from "@/components/map/LocationPicker";
 
 export type ListingFormDefaults = {
@@ -17,6 +18,7 @@ export type ListingFormDefaults = {
   landPurpose?: string;
   plotNumber?: string;
   location?: { lat: number; lng: number } | null;
+  geometry?: ListingPolygon | null;
 };
 
 export default function ListingForm({
@@ -112,9 +114,9 @@ export default function ListingForm({
 
       <div className="flex flex-col gap-1">
         <span className="text-sm font-medium text-gray-700">Vieta žemėlapyje</span>
-        <LocationPicker defaultValue={defaults?.location} />
-        {(state.fieldErrors?.latitude || state.fieldErrors?.longitude) && (
-          <span className="text-xs text-red-600">Neteisingos koordinatės</span>
+        <LocationPicker defaultPoint={defaults?.location} defaultGeometry={defaults?.geometry} />
+        {(state.fieldErrors?.latitude || state.fieldErrors?.longitude || state.fieldErrors?.geometry) && (
+          <span className="text-xs text-red-600">Neteisinga vieta arba sklypo ribos</span>
         )}
       </div>
 

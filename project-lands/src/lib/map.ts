@@ -7,6 +7,15 @@ export const LITHUANIA_ZOOM = 6.2;
 
 export const MARKER_COLOR = "#2e704a"; // brand-600
 
+// Lithuanian texts for MapLibre's built-in controls.
+export const MAP_LOCALE = {
+  "NavigationControl.ZoomIn": "Priartinti",
+  "NavigationControl.ZoomOut": "Nutolinti",
+  "CooperativeGesturesHandler.WindowsHelpText": "Priartinkite laikydami Ctrl ir sukdami pelės ratuką",
+  "CooperativeGesturesHandler.MacHelpText": "Priartinkite laikydami ⌘ ir sukdami pelės ratuką",
+  "CooperativeGesturesHandler.MobileHelpText": "Žemėlapį judinkite dviem pirštais",
+};
+
 export function googleMapsUrl(lat: number, lng: number): string {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 }
