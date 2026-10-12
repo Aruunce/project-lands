@@ -2,12 +2,9 @@
 
 import { signOut } from "next-auth/react";
 
-export default function LogoutButton() {
+export default function LogoutButton({ className = "" }: { className?: string }) {
   return (
-    <button
-      onClick={() => signOut({ callbackUrl: "/" })}
-      className="px-3 py-1 rounded-md text-green-700 font-semibold hover:bg-green-100 transition-colors duration-200"
-    >
+    <button onClick={() => signOut({ callbackUrl: "/" })} className={className}>
       Atsijungti
     </button>
   );

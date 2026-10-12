@@ -1,15 +1,25 @@
-import Hero from "@/components/Hero";
-import LandGrid from "@/components/LandGrid";
+import { prisma } from "@/lib/prisma";
+import Hero from "@/components/home/Hero";
+import LatestListings from "@/components/home/LatestListings";
+import About from "@/components/home/About";
+import Contact from "@/components/home/Contact";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [listings, activeListings] = await Promise.all([
+    prisma.listing.findMany({
+      where: { status: "PUBLISHED" },
+      orderBy: { publishedAt: "desc" },
+      take: 6,
+    }),
+    prisma.listing.count({ where: { status: "PUBLISHED" } }),
+  ]);
+
   return (
-    <main className="flex flex-col">
-      <section id="hero">
-        <Hero />
-      </section>
-      <section id="lands">
-        <LandGrid />
-      </section>
+    <main>
+      <Hero activeListings={activeListings} />
+      <LatestListings listings={listings} />
+      <About />
+      <Contact />
     </main>
   );
 }
