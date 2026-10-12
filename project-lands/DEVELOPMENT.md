@@ -30,6 +30,13 @@ nepriklausomi nemokami servisai vietoj vieno all-in-one tiekėjo.
   neprisijungusius; tikrasis teisių patikrinimas — `requireAdmin()`
   (`src/lib/authz.ts`), kuris kviečiamas kiekviename admin puslapyje ir
   server action'e ir rolę tikrina DB.
+- **Dviejų žingsnių patvirtinimas (2FA, 2026-10-12):** slaptažodis + 6 skaitmenų
+  kodas iš autentifikavimo programėlės (Google Authenticator ir pan., TOTP).
+  Įjungiama `/admin/saugumas` (QR kodas). Slaptas raktas DB saugomas
+  užšifruotas (AES-256-GCM, raktas išvedamas iš `AUTH_SECRET` — todėl
+  `AUTH_SECRET` turi sutapti visur, kur naudojama ta pati DB). Panaudotas kodas
+  antrą kartą netinka. Pametus telefoną — `npm run create-admin` leidžia
+  išjungti 2FA.
 - **Prisijungimo apsauga:** in-memory rate limit (10 bandymų / 15 min. vienam
   IP), `callbackUrl` leidžiamas tik tos pačios svetainės kelias (apsauga nuo
   open redirect), admin puslapiai pažymėti `noindex`.
