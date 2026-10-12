@@ -10,27 +10,47 @@ be didelio perrašymo.
 - **DB:** Neon (serverless PostgreSQL, free tier) per Prisma ORM
 - **Auth:** Auth.js (NextAuth v5) — email/password (Credentials provider), JWT sesijos
 - **Storage:** Vercel Blob (dar neprijungta — planuojama kitame etape)
-- **Žemėlapis:** MapLibre GL JS + OpenStreetMap (dar neprijungta — planuojama kitame etape)
-- **Stiliai:** Tailwind CSS v4
+- **Žemėlapis:** MapLibre GL JS + OpenFreeMap plytelės (nemokamos, be API rakto)
+- **Stiliai:** Tailwind CSS v4, ikonos — `lucide-react`, šriftai — Inter + Plus Jakarta Sans
 - **Hosting:** Vercel
 
 Pasirinkta sąmoningai NE Supabase (vartotojo sprendimas) — atskiri, tarpusavyje
 nepriklausomi nemokami servisai vietoj vieno all-in-one tiekėjo.
 
-## Kas jau padaryta (2026-08-31)
+## Kas jau padaryta
 
-- **Autentifikacija:** registracija, prisijungimas, atsijungimas, JWT sesijos su
-  `role` (`USER`/`ADMIN`) ir `canCreateListings` požymiu.
-- **Leidimų modelis (peržiūros etapas):** registracija ir skelbimų naršymas yra
-  vieši, bet skelbimą kurti gali tik vartotojai, kuriems administratorius
-  rankiniu būdu suteikė teisę (`User.canCreateListings`). Tai atskira nuo
-  `role`, kad vėliau būtų galima atidaryti visiems, tiesiog pakeitus stulpelio
-  numatytąją reikšmę į `true`.
+- **Vieno pardavėjo svetainė (2026-10-08):** skelbimus kelia tik svetainės
+  savininkas. Viešos registracijos nėra — lankytojai naršo be paskyros.
+  Prisijungti gali tik `ADMIN` rolės vartotojai, adresu `/admin/prisijungti`
+  (nuorodos į jį meniu nėra). Admin paskyra sukuriama `npm run create-admin`
+  skriptu.
+- **Admin dalis** (`/admin/*`): skelbimų valdymas (`/admin`), naujas skelbimas
+  (`/admin/skelbimai/naujas`), redagavimas
+  (`/admin/skelbimai/[slug]/redaguoti`). Middleware tik nukreipia
+  neprisijungusius; tikrasis teisių patikrinimas — `requireAdmin()`
+  (`src/lib/authz.ts`), kuris kviečiamas kiekviename admin puslapyje ir
+  server action'e ir rolę tikrina DB.
+- **Prisijungimo apsauga:** in-memory rate limit (10 bandymų / 15 min. vienam
+  IP), `callbackUrl` leidžiamas tik tos pačios svetainės kelias (apsauga nuo
+  open redirect), admin puslapiai pažymėti `noindex`.
+- **Kontaktai** nustatomi vieną kartą visai svetainei — `src/config/site.ts`
+  (nebe kiekviename skelbime).
 - **Skelbimų CRUD:** kūrimas (juodraštis) → redagavimas → publikavimas →
   paslėpimas/archyvavimas → trynimas. Visos mutacijos vyksta per Next.js
   Server Actions (`src/lib/actions/listings.ts`), kurios visada iš naujo
-  patikrina nuosavybę/teises tiesiogiai duomenų bazėje — niekada nepasitikima
-  vien middleware ar kliento puse.
+  patikrina teises tiesiogiai duomenų bazėje — niekada nepasitikima vien
+  middleware ar kliento puse.
+- **Kainos/ploto formatavimas** pagal lietuvišką lokalę (`src/lib/format.ts`):
+  „45 000 €“, „12,5 a“.
+- **Dizainas (2026-10-08):** naujas pradinis puslapis (hero su paieška,
+  naujausi skelbimai, „Apie“, „Kontaktai“, footer), mobilusis meniu, subtilios
+  animacijos (gerbia „reduced motion“). Paieška: `/skelbimai?q=...`.
+- **Žemėlapis (2026-10-12):** admin formoje sklypo vieta pažymima paspaudus
+  žemėlapyje; skelbimo puslapyje rodomas žemėlapis ir mygtukai „Google Maps“ /
+  „Waze“ maršrutui. MapLibre worker failas kopijuojamas į `public/` per
+  `postinstall` (`scripts/copy-map-worker.js`).
+- **Admin sąraše** rodomas kiekvieno skelbimo peržiūrų skaičius, trynimas
+  prašo patvirtinimo.
 - **Viešas skelbimų sąrašas ir detalus puslapis** su SEO metaduomenimis
   (`generateMetadata`, OpenGraph, kanoninis URL).
 - **Tipui-specifiniai laukai** (žemės paskirtis, sklypo Nr.) saugomi
@@ -43,35 +63,31 @@ nepriklausomi nemokami servisai vietoj vieno all-in-one tiekėjo.
 
 ## Kas dar NEpadaryta (TODO)
 
-- **Nuotraukų įkėlimas** (Vercel Blob) — kitas planuojamas etapas.
-- **Žemėlapis ir sklypo polygon žymėjimas** (MapLibre GL JS + OSM).
-- **Filtrai ir paieška** (kaina, plotas, savivaldybė, paskirtis, tekstinė paieška).
-- **Admin panelė** skelbimų moderavimui ir vartotojų valdymui (šiuo metu teisės
-  suteikiamos rankiniu `npm run promote` skriptu per komandinę eilutę).
-- **Magic link prisijungimas** — reikės transakcinio el. laiškų siuntimo
-  serviso (pvz. Resend), tai atskira paskyra/sprendimas; email/password kol
-  kas tenkina MVP minimumą.
-- **Rate limiting** registracijos/kūrimo endpointuose šiuo metu yra tik
+- **Nuotraukų įkėlimas** — kitas planuojamas etapas.
+- **Sklypo ribos (polygon)** žemėlapyje — dabar žymimas tik taškas.
+- **Filtrai** (kaina, plotas, savivaldybė, paskirtis) — kol kas tik tekstinė paieška.
+- **Admin dalies dizainas** — dar senas stilius.
+- **Užklausos forma** skelbime — reikės transakcinio el. laiškų siuntimo
+  serviso (pvz. Resend free tier).
+- **Rate limiting** prisijungimo/kūrimo veiksmuose šiuo metu yra tik
   paprastas in-memory best-effort sprendimas (`src/lib/rate-limit.ts`) — jis
   neveikia patikimai per kelias serverless instancijas. Jei prireiks
   patikimesnio, geriausias nemokamas variantas — Upstash Redis free tier.
 - Geo užklausos (radius paieška, paieška matomame žemėlapio plote) — schema
   paruošta (GeoJSON `Listing.geometry` stulpelis), bet PostGIS neįjungtas,
   nes Prisma jo native nepalaiko be raw SQL, o tai P2 prioritetas.
-- Peržiūrų statistika (`viewCount` stulpelis jau yra ir didėja kiekvieną kartą
-  atidarius skelbimą, bet jokio UI tam dar nėra).
 
 ## Duomenų bazės struktūra
 
 Pilna schema: [`prisma/schema.prisma`](prisma/schema.prisma). Trumpai:
 
-- **User** — Auth.js standartiniai laukai + `role` (`USER`/`ADMIN`) +
-  `canCreateListings` (boolean, default `false`).
+- **User** — Auth.js standartiniai laukai + `role` (`USER`/`ADMIN`). Prisijungti
+  gali tik `ADMIN`.
 - **Account, Session, VerificationToken** — Auth.js adapterio lentelės.
 - **Listing** — bendri NT laukai (`title`, `slug`, `description`, `price`,
   `pricePerUnit`, `area`, `areaUnit`, `address`, `municipality`, `city`,
-  `latitude`, `longitude`, `geometry` (GeoJSON), `status`, `viewCount`,
-  kontaktai) + `attributes` (JSONB, tipui-specifiniai laukai, žr.
+  `latitude`, `longitude`, `geometry` (GeoJSON), `status`, `viewCount`) +
+  `attributes` (JSONB, tipui-specifiniai laukai, žr.
   `src/types/listing.ts`).
 - **ListingImage** — nuotraukų metaduomenys (dar nenaudojama, laukia storage
   etapo).
@@ -91,7 +107,7 @@ production DB.
 | `AUTH_SECRET` | Auth.js JWT pasirašymo raktas (`npx auth secret`) |
 | `NEXT_PUBLIC_SITE_URL` | Svetainės bazinis URL |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob (dar nenaudojama) |
-| `NEXT_PUBLIC_MAP_PROVIDER` | Žemėlapio tiekėjo pasirinkimas (dar nenaudojama) |
+| `NEXT_PUBLIC_MAP_STYLE_URL` | Žemėlapio stilius (nebūtina; numatytasis — OpenFreeMap) |
 
 **Svarbu:** `DATABASE_URL`/`DIRECT_URL` turi būti faile `.env` (ne tik
 `.env.local`), nes Prisma CLI automatiškai skaito tik `.env`. Next.js skaito
@@ -106,10 +122,21 @@ npm run db:migrate   # pritaiko Prisma migracijas prie DB, nurodytos .env
 npm run dev
 ```
 
-Pirmam adminui / skelbimų kūrimo teisei suteikti (nes admin panelės dar nėra):
+Admin paskyrai sukurti (arba pamirštam slaptažodžiui pakeisti) — skriptas
+paklaus el. pašto, vardo ir slaptažodžio (slaptažodis rašant nerodomas):
 
 ```bash
-npm run promote -- vartotojo@paštas.lt admin
+npm run create-admin
+```
+
+Tada prisijunkite adresu `/admin`.
+
+Pavyzdiniai (demo) skelbimai peržiūrai — 15 sklypų su vietomis žemėlapyje.
+Jie priklauso atskiram `demo@example.test` vartotojui, todėl ištrinami tik jie:
+
+```bash
+npm run demo:add
+npm run demo:remove   # būtinai prieš paleidžiant svetainę viešai
 ```
 
 ## Deploy (Vercel)
