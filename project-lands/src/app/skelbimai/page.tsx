@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { Prisma } from "@prisma/client";
 import { SearchX } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { pluralize } from "@/lib/format";
+import {
+  activeFilterCount,
+  filtersToOrderBy,
+  filtersToSearchParams,
+  filtersToWhere,
+  parseFilters,
+} from "@/lib/listing-filters";
 import ListingCard from "@/components/listings/ListingCard";
-import SearchForm from "@/components/listings/SearchForm";
+import ListingFilters from "@/components/listings/ListingFilters";
 import Reveal from "@/components/ui/Reveal";
 
 const PAGE_SIZE = 12;
@@ -17,40 +23,37 @@ export const metadata: Metadata = {
 export default async function ListingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; q?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { page: pageParam, q: rawQuery } = await searchParams;
-  const page = Math.max(1, Number(pageParam) || 1);
-  const query = rawQuery?.trim().slice(0, 100) ?? "";
+  const params = await searchParams;
+  const filters = parseFilters(params);
+  const page = Math.max(1, Number(params.page) || 1);
+  const where = filtersToWhere(filters);
+  const activeCount = activeFilterCount(filters);
+  const isFiltered = activeCount > 0 || filters.q !== "";
 
-  const where: Prisma.ListingWhereInput = {
-    status: "PUBLISHED",
-    ...(query && {
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { city: { contains: query, mode: "insensitive" } },
-        { municipality: { contains: query, mode: "insensitive" } },
-        { address: { contains: query, mode: "insensitive" } },
-      ],
-    }),
-  };
-
-  const [listings, total] = await Promise.all([
+  const [listings, total, municipalityRows] = await Promise.all([
     prisma.listing.findMany({
       where,
-      orderBy: { publishedAt: "desc" },
+      orderBy: filtersToOrderBy(filters),
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
     prisma.listing.count({ where }),
+    prisma.listing.findMany({
+      where: { status: "PUBLISHED", municipality: { not: null } },
+      distinct: ["municipality"],
+      select: { municipality: true },
+      orderBy: { municipality: "asc" },
+    }),
   ]);
+  const municipalities = municipalityRows.map((row) => row.municipality!);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageHref = (p: number) => {
-    const params = new URLSearchParams();
-    if (query) params.set("q", query);
-    if (p > 1) params.set("page", String(p));
-    const search = params.toString();
+    const query = filtersToSearchParams(filters);
+    if (p > 1) query.set("page", String(p));
+    const search = query.toString();
     return search ? `/skelbimai?${search}` : "/skelbimai";
   };
 
@@ -62,18 +65,12 @@ export default async function ListingsPage({
             Sklypai ir kitas nekilnojamasis turtas
           </h1>
           <p className="mt-2 animate-fade-up text-stone-500 [animation-delay:80ms]">
-            {query ? (
-              <>
-                Pagal „{query}“ rasta {total} {pluralize(total, ["skelbimas", "skelbimai", "skelbimų"])}
-              </>
-            ) : (
-              <>
-                {total} {pluralize(total, ["aktyvus skelbimas", "aktyvūs skelbimai", "aktyvių skelbimų"])}
-              </>
-            )}
+            {isFiltered
+              ? `Rasta ${total} ${pluralize(total, ["skelbimas", "skelbimai", "skelbimų"])}`
+              : `${total} ${pluralize(total, ["aktyvus skelbimas", "aktyvūs skelbimai", "aktyvių skelbimų"])}`}
           </p>
           <div className="mt-6 animate-fade-up [animation-delay:160ms]">
-            <SearchForm defaultValue={query} size="compact" />
+            <ListingFilters filters={filters} municipalities={municipalities} activeCount={activeCount} />
           </div>
         </div>
       </section>
@@ -85,9 +82,9 @@ export default async function ListingsPage({
               <SearchX className="size-7" />
             </span>
             <p className="mt-5 font-display text-xl font-semibold text-stone-900">
-              {query ? "Nieko nerasta" : "Skelbimų dar nėra"}
+              {isFiltered ? "Pagal pasirinktus kriterijus nieko nerasta" : "Skelbimų dar nėra"}
             </p>
-            {query && (
+            {isFiltered && (
               <Link href="/skelbimai" className="mt-3 font-semibold text-brand-700 hover:text-brand-800">
                 Rodyti visus skelbimus
               </Link>
