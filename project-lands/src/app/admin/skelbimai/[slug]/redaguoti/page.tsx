@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
 import { updateListing } from "@/lib/actions/listings";
 import ListingForm from "@/components/listings/ListingForm";
-import type { LandAttributes, ListingPolygon } from "@/types/listing";
+import type { ListingAttributes, ListingPolygon } from "@/types/listing";
 
 export const metadata: Metadata = {
   title: "Redaguoti skelbimą",
@@ -22,7 +22,7 @@ export default async function EditListingPage({
   const listing = await prisma.listing.findUnique({ where: { slug } });
   if (!listing) notFound();
 
-  const attributes = (listing.attributes as LandAttributes | null) ?? {};
+  const attributes = (listing.attributes as ListingAttributes | null) ?? {};
   const boundAction = updateListing.bind(null, listing.id);
 
   return (
@@ -37,6 +37,7 @@ export default async function EditListingPage({
         action={boundAction}
         submitLabel="Išsaugoti"
         defaults={{
+          type: listing.type,
           title: listing.title,
           description: listing.description ?? undefined,
           price: listing.price.toString(),
@@ -48,6 +49,8 @@ export default async function EditListingPage({
           city: listing.city ?? undefined,
           landPurpose: attributes.landPurpose,
           plotNumber: attributes.plotNumber,
+          utilities: attributes.utilities,
+          buildings: attributes.buildings,
           location:
             listing.latitude != null && listing.longitude != null
               ? { lat: listing.latitude, lng: listing.longitude }

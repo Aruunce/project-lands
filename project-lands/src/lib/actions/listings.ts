@@ -9,7 +9,9 @@ import { requireAdmin } from "@/lib/authz";
 import { listingInputSchema, type ListingInput } from "@/lib/validations/listing";
 import { randomSlugSuffix, slugify } from "@/lib/slug";
 import { rateLimit } from "@/lib/rate-limit";
-import type { LandAttributes } from "@/types/listing";
+import { buildSearchText } from "@/lib/search";
+import { M2_PER_UNIT, TYPE_LABELS } from "@/lib/property";
+import type { ListingAttributes } from "@/types/listing";
 
 export type ListingFormState = {
   error?: string;
@@ -19,6 +21,7 @@ export type ListingFormState = {
 
 function parseForm(formData: FormData) {
   return listingInputSchema.safeParse({
+    type: formData.get("type"),
     title: formData.get("title"),
     description: formData.get("description"),
     price: formData.get("price"),
@@ -33,14 +36,18 @@ function parseForm(formData: FormData) {
     geometry: formData.get("geometry"),
     landPurpose: formData.get("landPurpose"),
     plotNumber: formData.get("plotNumber"),
+    utilities: formData.getAll("utilities"),
+    buildings: formData.get("buildings"),
   });
 }
 
 // Type-specific fields go into the `attributes` JSON column; only non-empty ones are kept.
-function toListingData({ landPurpose, plotNumber, geometry, ...data }: ListingInput) {
-  const attributes: LandAttributes = {
+function toListingData({ landPurpose, plotNumber, utilities, buildings, geometry, ...data }: ListingInput) {
+  const attributes: ListingAttributes = {
     ...(landPurpose && { landPurpose }),
     ...(plotNumber && { plotNumber }),
+    ...(utilities.length > 0 && { utilities }),
+    ...(buildings.length > 0 && { buildings }),
   };
 
   // A drawn boundary without a pin gets its center as the pin.
@@ -50,7 +57,13 @@ function toListingData({ landPurpose, plotNumber, geometry, ...data }: ListingIn
     data.longitude = center.lng;
   }
 
-  return { ...data, attributes, geometry: geometry ?? Prisma.DbNull };
+  return {
+    ...data,
+    attributes,
+    geometry: geometry ?? Prisma.DbNull,
+    areaSqm: data.area * M2_PER_UNIT[data.areaUnit],
+    searchText: buildSearchText([data.title, data.city, data.municipality, data.address, TYPE_LABELS[data.type]]),
+  };
 }
 
 async function generateUniqueSlug(title: string): Promise<string> {

@@ -1,14 +1,17 @@
 import Link from "next/link";
 import type { Listing } from "@prisma/client";
-import { ArrowRight, MapPin, Ruler } from "lucide-react";
+import { ArrowRight, House, MapPin, Ruler } from "lucide-react";
 import { AREA_UNIT_LABELS, formatArea, formatPrice } from "@/lib/format";
-import type { LandAttributes, ListingPolygon } from "@/types/listing";
+import { BUILDING_KINDS, TYPE_LABELS, labelOf } from "@/lib/property";
+import type { ListingAttributes, ListingPolygon } from "@/types/listing";
 import MapThumbnail from "@/components/map/MapThumbnail";
 import PlotPlaceholder from "./PlotPlaceholder";
 
 export default function ListingCard({ listing }: { listing: Listing }) {
-  const attributes = (listing.attributes as LandAttributes | null) ?? {};
+  const attributes = (listing.attributes as ListingAttributes | null) ?? {};
   const location = [listing.city, listing.municipality].filter(Boolean).join(", ");
+  const buildingCount = attributes.buildings?.length ?? 0;
+  const mainBuilding = attributes.buildings?.[0];
 
   return (
     <Link
@@ -29,11 +32,10 @@ export default function ListingCard({ listing }: { listing: Listing }) {
             className="transition-transform duration-700 ease-out group-hover:scale-105"
           />
         )}
-        {attributes.landPurpose && (
-          <span className="absolute left-3 top-3 max-w-[85%] truncate rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-brand-800 shadow-sm backdrop-blur">
-            {attributes.landPurpose}
-          </span>
-        )}
+        <span className="absolute left-3 top-3 max-w-[85%] truncate rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-800 shadow-sm backdrop-blur">
+          {TYPE_LABELS[listing.type]}
+          {attributes.landPurpose && <span className="font-normal text-stone-600"> · {attributes.landPurpose}</span>}
+        </span>
       </div>
 
       <div className="flex flex-1 flex-col p-5">
@@ -56,6 +58,17 @@ export default function ListingCard({ listing }: { listing: Listing }) {
           <p className="mt-1.5 flex items-center gap-1.5 text-sm text-stone-500">
             <MapPin className="size-4 shrink-0" aria-hidden="true" />
             <span className="truncate">{location}</span>
+          </p>
+        )}
+
+        {mainBuilding && (
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-stone-500">
+            <House className="size-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">
+              {labelOf(BUILDING_KINDS, mainBuilding.kind)}
+              {mainBuilding.area && ` · ${formatArea(mainBuilding.area, "SQM")}`}
+              {buildingCount > 1 && ` +${buildingCount - 1}`}
+            </span>
           </p>
         )}
 

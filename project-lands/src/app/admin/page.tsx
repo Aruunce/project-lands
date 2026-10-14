@@ -4,6 +4,7 @@ import { Eye, ShieldCheck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
 import { STATUS_LABELS } from "@/lib/format";
+import { TYPE_LABELS } from "@/lib/property";
 import { deleteListing, setListingStatus } from "@/lib/actions/listings";
 import type { ListingStatus } from "@prisma/client";
 import ConfirmSubmitButton from "@/components/ui/ConfirmSubmitButton";
@@ -50,7 +51,8 @@ export default async function AdminListingsPage() {
                   {listing.title}
                 </Link>
                 <p className="flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
-                  <span>{STATUS_LABELS[listing.status]}</span>
+                  <span>{TYPE_LABELS[listing.type]}</span>
+                  <span>• {STATUS_LABELS[listing.status]}</span>
                   <span>• Sukurta {listing.createdAt.toLocaleDateString("lt-LT")}</span>
                   <span className="inline-flex items-center gap-1">
                     • <Eye className="size-3.5" /> {listing.viewCount}

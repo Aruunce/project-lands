@@ -2,14 +2,23 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { LucideIcon } from "lucide-react";
-import { ArrowLeft, Hash, Mail, MapPin, Navigation, Phone, Ruler, Sprout, Tag } from "lucide-react";
+import { ArrowLeft, Check, Hash, House, Mail, MapPin, Navigation, Phone, Ruler, Sprout, Tag } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { AREA_UNIT_LABELS, STATUS_LABELS, formatArea, formatPrice } from "@/lib/format";
 import { googleDirectionsUrl, wazeUrl } from "@/lib/map";
 import { siteConfig } from "@/config/site";
-import type { LandAttributes, ListingPolygon } from "@/types/listing";
+import {
+  BUILDING_CONDITIONS,
+  BUILDING_KINDS,
+  TYPE_LABELS,
+  UTILITIES,
+  isLandBased,
+  labelOf,
+  type Building,
+} from "@/lib/property";
+import type { ListingAttributes, ListingPolygon } from "@/types/listing";
 import type { AreaUnit } from "@prisma/client";
 import PlotPlaceholder from "@/components/listings/PlotPlaceholder";
 import ListingMap from "@/components/map/ListingMap";
@@ -69,7 +78,7 @@ export default async function ListingDetailPage({
     });
   }
 
-  const attributes = (listing.attributes as LandAttributes | null) ?? {};
+  const attributes = (listing.attributes as ListingAttributes | null) ?? {};
   const location = [listing.city, listing.municipality].filter(Boolean).join(", ");
   const unit = AREA_UNIT_LABELS[listing.areaUnit];
   const coords =
@@ -101,11 +110,9 @@ export default async function ListingDetailPage({
           ) : (
             <PlotPlaceholder seed={listing.slug} />
           )}
-          {attributes.landPurpose && (
-            <span className="absolute left-4 top-4 z-10 rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-brand-800 shadow-sm backdrop-blur">
-              {attributes.landPurpose}
-            </span>
-          )}
+          <span className="absolute left-4 top-4 z-10 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-brand-800 shadow-sm backdrop-blur">
+            {TYPE_LABELS[listing.type]}
+          </span>
         </div>
 
         <div className="mt-8 flex animate-fade-up flex-col gap-4 [animation-delay:100ms] lg:flex-row lg:items-end lg:justify-between">
@@ -131,7 +138,11 @@ export default async function ListingDetailPage({
         <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_360px]">
           <div className="animate-fade-up [animation-delay:200ms]">
             <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <Fact icon={Ruler} label="Plotas" value={formatArea(listing.area, listing.areaUnit)} />
+              <Fact
+                icon={Ruler}
+                label={isLandBased(listing.type) ? "Sklypo plotas" : "Plotas"}
+                value={formatArea(listing.area, listing.areaUnit)}
+              />
               {listing.pricePerUnit && (
                 <Fact
                   icon={Tag}
@@ -140,7 +151,7 @@ export default async function ListingDetailPage({
                 />
               )}
               {attributes.landPurpose && <Fact icon={Sprout} label="Paskirtis" value={attributes.landPurpose} />}
-              {attributes.plotNumber && <Fact icon={Hash} label="Sklypo Nr." value={attributes.plotNumber} />}
+              {attributes.plotNumber && <Fact icon={Hash} label="Sklypo / unikalus Nr." value={attributes.plotNumber} />}
               {listing.address && <Fact icon={MapPin} label="Adresas" value={listing.address} />}
             </dl>
 
@@ -148,6 +159,34 @@ export default async function ListingDetailPage({
               <section className="mt-10">
                 <h2 className="font-display text-xl font-semibold text-stone-900">Aprašymas</h2>
                 <p className="mt-3 whitespace-pre-line leading-relaxed text-stone-700">{listing.description}</p>
+              </section>
+            )}
+
+            {attributes.buildings && attributes.buildings.length > 0 && (
+              <section className="mt-10">
+                <h2 className="font-display text-xl font-semibold text-stone-900">Statiniai</h2>
+                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {attributes.buildings.map((building, index) => (
+                    <BuildingCard key={index} building={building} />
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {attributes.utilities && attributes.utilities.length > 0 && (
+              <section className="mt-10">
+                <h2 className="font-display text-xl font-semibold text-stone-900">Komunikacijos</h2>
+                <ul className="mt-4 flex flex-wrap gap-2">
+                  {attributes.utilities.map((utility) => (
+                    <li
+                      key={utility}
+                      className="flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-800 ring-1 ring-brand-200"
+                    >
+                      <Check className="size-4" />
+                      {labelOf(UTILITIES, utility)}
+                    </li>
+                  ))}
+                </ul>
               </section>
             )}
           </div>
@@ -159,6 +198,25 @@ export default async function ListingDetailPage({
         </div>
       </div>
     </main>
+  );
+}
+
+function BuildingCard({ building }: { building: Building }) {
+  const details = [
+    building.area && `${formatArea(building.area, "SQM")}`,
+    building.yearBuilt && `${building.yearBuilt} m.`,
+    building.condition && labelOf(BUILDING_CONDITIONS, building.condition),
+  ].filter(Boolean);
+
+  return (
+    <li className="rounded-2xl bg-white p-4 ring-1 ring-stone-200/80">
+      <p className="flex items-center gap-2 font-semibold text-stone-900">
+        <House className="size-4 text-brand-600" />
+        {labelOf(BUILDING_KINDS, building.kind)}
+      </p>
+      {details.length > 0 && <p className="mt-1 text-sm text-stone-600">{details.join(" · ")}</p>}
+      {building.description && <p className="mt-2 text-sm leading-relaxed text-stone-700">{building.description}</p>}
+    </li>
   );
 }
 

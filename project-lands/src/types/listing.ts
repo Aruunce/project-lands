@@ -1,4 +1,5 @@
 import type { AreaUnit, ListingStatus, ListingType, UserRole } from "@prisma/client";
+import type { Building, Utility } from "@/lib/property";
 
 export type { AreaUnit, ListingStatus, ListingType, UserRole };
 
@@ -9,12 +10,12 @@ export type ListingPolygon = {
 };
 
 // Type-specific fields stored in Listing.attributes (JSON), so new types need no migration.
-export type LandAttributes = {
+export type ListingAttributes = {
   landPurpose?: string; // žemės paskirtis
-  plotNumber?: string; // sklypo numeris / kadastro Nr.
+  plotNumber?: string; // sklypo / unikalus Nr.
+  utilities?: Utility[];
+  buildings?: Building[];
 };
-
-export type ListingAttributes = LandAttributes;
 
 export type PropertyLocation = {
   address?: string | null;

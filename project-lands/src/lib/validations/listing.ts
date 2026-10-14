@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { BUILDING_CONDITIONS, BUILDING_KINDS, LISTING_TYPES, UTILITIES } from "@/lib/property";
+
+const values = <T extends string>(options: readonly { value: T }[]) =>
+  options.map((option) => option.value) as [T, ...T[]];
 
 // Empty form fields become null, so clearing a field on edit clears it in the DB too.
 const emptyToNull = (value: unknown) =>
@@ -23,7 +27,25 @@ const optionalPolygon = z.preprocess((value) => {
   }
 }, polygonSchema.nullable());
 
+// Buildings on the property, sent as a JSON array from the form.
+const buildingSchema = z.object({
+  kind: z.enum(values(BUILDING_KINDS)),
+  area: z.number().positive().max(100_000).optional(),
+  yearBuilt: z.number().int().min(1700).max(2100).optional(),
+  condition: z.enum(values(BUILDING_CONDITIONS)).optional(),
+  description: z.string().trim().max(2000).optional(),
+});
+const buildingsSchema = z.preprocess((value) => {
+  if (emptyToNull(value) === null) return [];
+  try {
+    return JSON.parse(String(value));
+  } catch {
+    return value;
+  }
+}, z.array(buildingSchema).max(20));
+
 export const listingInputSchema = z.object({
+  type: z.enum(values(LISTING_TYPES)),
   title: z.string().trim().min(3, "Pavadinimas per trumpas").max(200),
   description: optionalText(5000),
   price: z.coerce.number().positive("Kaina turi būti teigiama"),
@@ -38,6 +60,8 @@ export const listingInputSchema = z.object({
   geometry: optionalPolygon,
   landPurpose: optionalText(200),
   plotNumber: optionalText(100),
+  utilities: z.array(z.enum(values(UTILITIES))).max(UTILITIES.length),
+  buildings: buildingsSchema,
 });
 
 export type ListingInput = z.infer<typeof listingInputSchema>;

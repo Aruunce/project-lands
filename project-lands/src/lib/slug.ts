@@ -10,14 +10,17 @@ const LT_DIACRITICS: Record<string, string> = {
   ž: "z",
 };
 
-export function slugify(input: string): string {
-  const withoutDiacritics = input
+// Lowercase and replace Lithuanian letters with plain Latin ones ("Molėtų" -> "moletu").
+export function stripDiacritics(input: string): string {
+  return input
     .toLowerCase()
     .split("")
     .map((char) => LT_DIACRITICS[char] ?? char)
     .join("");
+}
 
-  return withoutDiacritics
+export function slugify(input: string): string {
+  return stripDiacritics(input)
     .replace(/[^a-z0-9\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-")
