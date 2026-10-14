@@ -10,6 +10,7 @@ import { listingInputSchema, type ListingInput } from "@/lib/validations/listing
 import { randomSlugSuffix, slugify } from "@/lib/slug";
 import { rateLimit } from "@/lib/rate-limit";
 import { buildSearchText } from "@/lib/search";
+import { deleteFiles } from "@/lib/storage";
 import { M2_PER_UNIT, TYPE_LABELS } from "@/lib/property";
 import type { ListingAttributes } from "@/types/listing";
 
@@ -135,7 +136,9 @@ export async function updateListing(
 export async function deleteListing(id: string): Promise<void> {
   await requireAdmin();
 
+  const images = await prisma.listingImage.findMany({ where: { listingId: id }, select: { url: true, thumbUrl: true } });
   await prisma.listing.deleteMany({ where: { id } });
+  await deleteFiles(images.flatMap((image) => [image.url, image.thumbUrl]));
   revalidatePath("/admin");
 }
 

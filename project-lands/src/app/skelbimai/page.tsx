@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SearchX } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { withMainPhoto } from "@/lib/listing-queries";
 import { pluralize } from "@/lib/format";
 import {
   activeFilterCount,
@@ -38,6 +39,7 @@ export default async function ListingsPage({
       orderBy: filtersToOrderBy(filters),
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
+      include: withMainPhoto,
     }),
     prisma.listing.count({ where }),
     prisma.listing.findMany({

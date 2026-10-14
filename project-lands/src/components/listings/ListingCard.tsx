@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Listing } from "@prisma/client";
+import type { Listing, ListingImage } from "@prisma/client";
 import { ArrowRight, House, MapPin, Ruler } from "lucide-react";
 import { AREA_UNIT_LABELS, formatArea, formatPrice } from "@/lib/format";
 import { BUILDING_KINDS, TYPE_LABELS, labelOf } from "@/lib/property";
@@ -7,8 +7,12 @@ import type { ListingAttributes, ListingPolygon } from "@/types/listing";
 import MapThumbnail from "@/components/map/MapThumbnail";
 import PlotPlaceholder from "./PlotPlaceholder";
 
-export default function ListingCard({ listing }: { listing: Listing }) {
+// `images` (optional): the main photo, if the query included it.
+export type CardListing = Listing & { images?: Pick<ListingImage, "thumbUrl">[] };
+
+export default function ListingCard({ listing }: { listing: CardListing }) {
   const attributes = (listing.attributes as ListingAttributes | null) ?? {};
+  const photo = listing.images?.[0];
   const location = [listing.city, listing.municipality].filter(Boolean).join(", ");
   const buildingCount = attributes.buildings?.length ?? 0;
   const mainBuilding = attributes.buildings?.[0];
@@ -19,18 +23,29 @@ export default function ListingCard({ listing }: { listing: Listing }) {
       className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200/80 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-950/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
     >
       <div className="relative aspect-[4/3] overflow-hidden">
-        {/* The pattern doubles as the loading state for the map image. */}
-        <PlotPlaceholder
-          seed={listing.slug}
-          className="transition-transform duration-700 ease-out group-hover:scale-105"
-        />
-        {listing.latitude != null && listing.longitude != null && (
-          <MapThumbnail
-            lat={listing.latitude}
-            lng={listing.longitude}
-            geometry={listing.geometry as ListingPolygon | null}
-            className="transition-transform duration-700 ease-out group-hover:scale-105"
+        {photo ? (
+          <img
+            src={photo.thumbUrl}
+            alt={listing.title}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
+        ) : (
+          <>
+            {/* The pattern doubles as the loading state for the map image. */}
+            <PlotPlaceholder
+              seed={listing.slug}
+              className="transition-transform duration-700 ease-out group-hover:scale-105"
+            />
+            {listing.latitude != null && listing.longitude != null && (
+              <MapThumbnail
+                lat={listing.latitude}
+                lng={listing.longitude}
+                geometry={listing.geometry as ListingPolygon | null}
+                className="transition-transform duration-700 ease-out group-hover:scale-105"
+              />
+            )}
+          </>
         )}
         <span className="absolute left-3 top-3 max-w-[85%] truncate rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-800 shadow-sm backdrop-blur">
           {TYPE_LABELS[listing.type]}

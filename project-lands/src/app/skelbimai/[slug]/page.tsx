@@ -22,12 +22,16 @@ import type { ListingAttributes, ListingPolygon } from "@/types/listing";
 import type { AreaUnit } from "@prisma/client";
 import PlotPlaceholder from "@/components/listings/PlotPlaceholder";
 import ListingMap from "@/components/map/ListingMap";
+import ListingGallery from "@/components/listings/ListingGallery";
 
 const PER_UNIT_LABELS: Record<AreaUnit, string> = { SQM: "m²", ARE: "arą", HECTARE: "hektarą" };
 
 async function getVisibleListing(slug: string) {
   const session = await auth();
-  const listing = await prisma.listing.findUnique({ where: { slug } });
+  const listing = await prisma.listing.findUnique({
+    where: { slug },
+    include: { images: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] } },
+  });
   if (!listing) return null;
 
   const viewerIsAdmin = isAdmin(session?.user);
@@ -47,6 +51,7 @@ export async function generateMetadata({
   const { listing } = result;
 
   const description = listing.description?.slice(0, 160) ?? `${listing.title} — ${siteConfig.name}`;
+  const mainPhoto = listing.images[0];
 
   return {
     title: listing.title,
@@ -56,6 +61,8 @@ export async function generateMetadata({
       title: listing.title,
       description,
       type: "website",
+      // Shown when the link is shared on Facebook/Messenger.
+      ...(mainPhoto && { images: [{ url: mainPhoto.url, width: mainPhoto.width, height: mainPhoto.height }] }),
     },
   };
 }
@@ -85,6 +92,11 @@ export default async function ListingDetailPage({
     listing.latitude != null && listing.longitude != null
       ? { lat: listing.latitude, lng: listing.longitude }
       : null;
+  const typeBadge = (
+    <span className="rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-brand-800 shadow-sm backdrop-blur">
+      {TYPE_LABELS[listing.type]}
+    </span>
+  );
 
   return (
     <main className="pb-20">
@@ -103,17 +115,21 @@ export default async function ListingDetailPage({
           </p>
         )}
 
-        {/* Until photos exist, the header shows the plot on the map. */}
-        <div className="relative mt-6 h-72 animate-fade-up overflow-hidden rounded-3xl bg-stone-100 ring-1 ring-stone-200 sm:h-[440px]">
-          {coords ? (
-            <ListingMap lat={coords.lat} lng={coords.lng} geometry={listing.geometry as ListingPolygon | null} />
-          ) : (
-            <PlotPlaceholder seed={listing.slug} />
-          )}
-          <span className="absolute left-4 top-4 z-10 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-brand-800 shadow-sm backdrop-blur">
-            {TYPE_LABELS[listing.type]}
-          </span>
-        </div>
+        {/* Header: photos if there are any, otherwise the plot on the map. */}
+        {listing.images.length > 0 ? (
+          <div className="mt-6 animate-fade-up">
+            <ListingGallery photos={listing.images} title={listing.title} badge={typeBadge} />
+          </div>
+        ) : (
+          <div className="relative mt-6 h-72 animate-fade-up overflow-hidden rounded-3xl bg-stone-100 ring-1 ring-stone-200 sm:h-[440px]">
+            {coords ? (
+              <ListingMap lat={coords.lat} lng={coords.lng} geometry={listing.geometry as ListingPolygon | null} />
+            ) : (
+              <PlotPlaceholder seed={listing.slug} />
+            )}
+            <div className="absolute left-4 top-4 z-10">{typeBadge}</div>
+          </div>
+        )}
 
         <div className="mt-8 flex animate-fade-up flex-col gap-4 [animation-delay:100ms] lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -187,6 +203,16 @@ export default async function ListingDetailPage({
                     </li>
                   ))}
                 </ul>
+              </section>
+            )}
+
+            {/* With photos in the header, the map moves down here. */}
+            {listing.images.length > 0 && coords && (
+              <section className="mt-10">
+                <h2 className="font-display text-xl font-semibold text-stone-900">Vieta</h2>
+                <div className="mt-4 h-80 overflow-hidden rounded-2xl bg-stone-100 ring-1 ring-stone-200 sm:h-96">
+                  <ListingMap lat={coords.lat} lng={coords.lng} geometry={listing.geometry as ListingPolygon | null} />
+                </div>
               </section>
             )}
           </div>

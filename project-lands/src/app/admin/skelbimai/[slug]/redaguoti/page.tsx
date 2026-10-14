@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
 import { updateListing } from "@/lib/actions/listings";
 import ListingForm from "@/components/listings/ListingForm";
+import ImageManager from "@/components/admin/ImageManager";
 import type { ListingAttributes, ListingPolygon } from "@/types/listing";
 
 export const metadata: Metadata = {
@@ -19,7 +20,10 @@ export default async function EditListingPage({
   const { slug } = await params;
   await requireAdmin(`/admin/skelbimai/${slug}/redaguoti`);
 
-  const listing = await prisma.listing.findUnique({ where: { slug } });
+  const listing = await prisma.listing.findUnique({
+    where: { slug },
+    include: { images: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }], select: { id: true, thumbUrl: true } } },
+  });
   if (!listing) notFound();
 
   const attributes = (listing.attributes as ListingAttributes | null) ?? {};
@@ -33,6 +37,14 @@ export default async function EditListingPage({
           Peržiūrėti skelbimą →
         </Link>
       </p>
+
+      <section className="mx-auto mb-10 flex max-w-2xl flex-col gap-3">
+        <h2 className="border-b border-gray-200 pb-2 text-lg font-semibold text-gray-900">
+          Nuotraukos <span className="font-normal text-gray-500">({listing.images.length})</span>
+        </h2>
+        <ImageManager listingId={listing.id} images={listing.images} />
+      </section>
+
       <ListingForm
         action={boundAction}
         submitLabel="Išsaugoti"

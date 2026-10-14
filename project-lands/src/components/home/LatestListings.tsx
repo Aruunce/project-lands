@@ -1,11 +1,10 @@
 import Link from "next/link";
-import type { Listing } from "@prisma/client";
 import { ArrowRight, TreePine } from "lucide-react";
-import ListingCard from "@/components/listings/ListingCard";
+import ListingCard, { type CardListing } from "@/components/listings/ListingCard";
 import Reveal from "@/components/ui/Reveal";
 import SectionHeading from "./SectionHeading";
 
-export default function LatestListings({ listings }: { listings: Listing[] }) {
+export default function LatestListings({ listings }: { listings: CardListing[] }) {
   return (
     <section id="skelbimai" className="scroll-mt-24 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">

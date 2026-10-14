@@ -40,6 +40,9 @@ yarn-error.log*
 # copied from node_modules on npm install
 /public/maplibre-gl-worker.mjs
 
+# photos uploaded during local development (production uses Vercel Blob)
+/public/uploads/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

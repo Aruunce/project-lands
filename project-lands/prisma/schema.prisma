@@ -151,12 +151,16 @@ model Listing {
   @@map("listings")
 }
 
+// Photos are resized in the browser before upload: `url` ≤1920px, `thumbUrl` ≤640px.
+// The first photo (lowest sortOrder) is the main one.
 model ListingImage {
-  id          String  @id @default(cuid())
-  listingId   String
-  storagePath String
-  sortOrder   Int     @default(0)
-  isPrimary   Boolean @default(false)
+  id        String @id @default(cuid())
+  listingId String
+  url       String
+  thumbUrl  String
+  width     Int
+  height    Int
+  sortOrder Int    @default(0)
 
   createdAt DateTime @default(now())
 

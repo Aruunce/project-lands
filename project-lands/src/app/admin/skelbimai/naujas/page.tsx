@@ -12,7 +12,10 @@ export default async function NewListingPage() {
 
   return (
     <main className="px-4 py-10">
-      <h1 className="text-2xl font-bold text-green-800 text-center mb-8">Naujas skelbimas</h1>
+      <h1 className="text-2xl font-bold text-green-800 text-center">Naujas skelbimas</h1>
+      <p className="mx-auto mb-8 mt-2 max-w-2xl text-center text-sm text-gray-500">
+        Nuotraukas galėsite įkelti išsaugoję skelbimą — jis bus išsaugotas kaip juodraštis.
+      </p>
       <ListingForm action={createListing} submitLabel="Sukurti (juodraštis)" />
     </main>
   );
