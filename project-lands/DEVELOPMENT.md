@@ -58,6 +58,21 @@ nepriklausomi nemokami servisai vietoj vieno all-in-one tiekėjo.
   `postinstall` (`scripts/copy-map-worker.js`).
 - **Admin sąraše** rodomas kiekvieno skelbimo peržiūrų skaičius, trynimas
   prašo patvirtinimo.
+- **Sklypo ribos (2026-10-12):** admin formoje galima nubrėžti sklypo kontūrą
+  (bet kiek kampų); kortelėse rodomas žemėlapio vaizdas su kontūru.
+- **NT tipai (2026-10-14):** sklypas, sodyba, namas, miškas, komercinis, butas,
+  kita (`src/lib/property.ts`). Skiltis „Statiniai“ (rūšis, plotas, metai,
+  būklė, aprašymas) ir „Komunikacijos“ saugomi `Listing.attributes`.
+- **Filtrai ir paieška:** `/skelbimai` filtrų skydelis (išsiskleidžia paspaudus):
+  tipas, savivaldybė, kaina, plotas, komunikacijos, rikiavimas — parametrai
+  URL'e. Paieška ignoruoja lietuviškas raides ir galūnes (`src/lib/search.ts`);
+  išvestiniai stulpeliai `areaSqm` ir `searchText` pildomi išsaugant.
+- **Nuotraukos:** įkeliamos redagavimo puslapyje (galima kelias iš karto arba
+  įtempiant). Naršyklė prieš įkeliant sumažina: ≤1920 px ir ≤640 px miniatiūra
+  (WebP). Saugoma Vercel Blob (`src/lib/storage.ts`); be
+  `BLOB_READ_WRITE_TOKEN` lokaliai — `public/uploads` (tik kūrimui). Pirma
+  nuotrauka — pagrindinė (kortelėje ir dalinantis nuoroda). Skelbime — galerija
+  su peržiūra per visą ekraną.
 - **Viešas skelbimų sąrašas ir detalus puslapis** su SEO metaduomenimis
   (`generateMetadata`, OpenGraph, kanoninis URL).
 - **Tipui-specifiniai laukai** (žemės paskirtis, sklypo Nr.) saugomi
@@ -70,10 +85,9 @@ nepriklausomi nemokami servisai vietoj vieno all-in-one tiekėjo.
 
 ## Kas dar NEpadaryta (TODO)
 
-- **Nuotraukų įkėlimas** — kitas planuojamas etapas.
-- **Sklypo ribos (polygon)** žemėlapyje — dabar žymimas tik taškas.
-- **Filtrai** (kaina, plotas, savivaldybė, paskirtis) — kol kas tik tekstinė paieška.
 - **Admin dalies dizainas** — dar senas stilius.
+- **Atskira DB kūrimui** — dabar lokali aplinka ir svetainė naudoja tą pačią
+  Neon DB; rekomenduojama sukurti Neon „branch“ kūrimui.
 - **Užklausos forma** skelbime — reikės transakcinio el. laiškų siuntimo
   serviso (pvz. Resend free tier).
 - **Rate limiting** prisijungimo/kūrimo veiksmuose šiuo metu yra tik
@@ -113,7 +127,7 @@ production DB.
 | `DIRECT_URL` | Neon direct connection (tik migracijoms) |
 | `AUTH_SECRET` | Auth.js JWT pasirašymo raktas (`npx auth secret`) |
 | `NEXT_PUBLIC_SITE_URL` | Svetainės bazinis URL |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob (dar nenaudojama) |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob nuotraukoms (Vercel → Storage → Create → Blob, prieiga **Public**; Vercel prideda pats) |
 | `NEXT_PUBLIC_MAP_STYLE_URL` | Žemėlapio stilius (nebūtina; numatytasis — OpenFreeMap) |
 
 **Svarbu:** `DATABASE_URL`/`DIRECT_URL` turi būti faile `.env` (ne tik
